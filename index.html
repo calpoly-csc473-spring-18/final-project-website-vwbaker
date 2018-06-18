@@ -1,0 +1,104 @@
+<html><head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <title>Motion Blur!</title>
+</head>
+
+ 
+
+<body class="container">
+
+    <br>
+
+    <center>
+    <h1>Final Project - Motion Blur</h1>
+    <small>Tori Baker - CPE 473 - Spring 2018</small>
+      </center>
+
+
+    <br>
+ <div>
+    <h2>Description</h2>
+    <p> For my final project, I implemented motion blur into my raytracer.  This allows you to add extra fields into a pov file including "velocity", "rotation_velocity", and "scale_velocity".  Given these fields, the raytracer will render images with these velocities with motion blur over the course of one second.  There is also an optional "frames" field that allows you to specify how many frames to actually render in that second (by default it is set to 10).  </p>
+
+      <h2>Code</h2>
+	  
+    <p>
+
+          </p><h3>Creating motion blur</h3>
+		  <p> To create motion blur, I create a color buffer the size of the image in order to collect the color at each pixel for multiple different scenes.  Between each scene, we must update the positions of each of the objects in the scene and recreate their transform matricies.  </p>
+
+<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">drawMotionScene</span>(<span style="color: #008800; font-weight: bold">const</span> RenderRequest <span style="color: #333333">&amp;</span> rr, <span style="color: #008800; font-weight: bold">const</span> Scene <span style="color: #333333">&amp;</span> scene) {
+        <span style="color: #333399; font-weight: bold">float</span> dt <span style="color: #333333">=</span> <span style="color: #6600EE; font-weight: bold">1.f</span> <span style="color: #333333">/</span> rr.frames;
+        vec3 color_buffer[rr.width][rr.height];
+        Image image(rr.width, rr.height);
+
+        <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> i <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; i <span style="color: #333333">&lt;</span> rr.width; <span style="color: #333333">++</span>i) {
+                <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> j <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; j <span style="color: #333333">&lt;</span> rr.height; <span style="color: #333333">++</span>j) {
+                        color_buffer[i][j] <span style="color: #333333">=</span> vec3(<span style="color: #0000DD; font-weight: bold">0</span>);
+                }
+        }
+        <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">float</span> t <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; t <span style="color: #333333">&lt;</span> <span style="color: #0000DD; font-weight: bold">1</span>; t <span style="color: #333333">+=</span> dt) {
+                <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> i <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; i <span style="color: #333333">&lt;</span> scene.objs.size(); <span style="color: #333333">++</span>i) {
+                        scene.objs[i]<span style="color: #333333">-&gt;</span>updateVelocity(dt);
+                        scene.objs[i]<span style="color: #333333">-&gt;</span>init();
+                }
+                <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> i <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; i <span style="color: #333333">&lt;</span> rr.width; <span style="color: #333333">++</span>i) {
+                        <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> j <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; j <span style="color: #333333">&lt;</span> rr.height; <span style="color: #333333">++</span>j) {
+                                color_buffer[i][j] <span style="color: #333333">+=</span> pixelColor(rr, scene, i, j, <span style="color: #007020">false</span>);
+                        }
+                }
+        }
+        <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> i <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; i <span style="color: #333333">&lt;</span> rr.width; <span style="color: #333333">++</span>i) {
+                <span style="color: #008800; font-weight: bold">for</span> (<span style="color: #333399; font-weight: bold">int</span> j <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">0</span>; j <span style="color: #333333">&lt;</span> rr.height; <span style="color: #333333">++</span>j) {
+                        vec3 color <span style="color: #333333">=</span> color_buffer[i][j] <span style="color: #333333">*</span> dt;
+                        <span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">char</span> r <span style="color: #333333">=</span> (<span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">char</span>) round(color.r <span style="color: #333333">*</span> <span style="color: #6600EE; font-weight: bold">255.f</span>);
+                        <span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">char</span> g <span style="color: #333333">=</span> (<span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">char</span>) round(color.g <span style="color: #333333">*</span> <span style="color: #6600EE; font-weight: bold">255.f</span>);
+                        <span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">char</span> b <span style="color: #333333">=</span> (<span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">char</span>) round(color.b <span style="color: #333333">*</span> <span style="color: #6600EE; font-weight: bold">255.f</span>);
+                        image.setPixel(i, j, r, g, b);
+                }
+        }
+        image.writeToFile(<span style="background-color: #fff0f0">&quot;output.png&quot;</span>);
+}
+</pre></div>
+
+
+
+         <p></p>
+		 <h3>Updating the scene</h3>
+		 <p>The velocity update involves updating the transform matricies to reflect how far the object would have moved.  It multiplies it my dt which is 1/frames so that it moves less each frame when the frame count is higher allowing it to move the same distance overall.  I also added a gravity component by increasing the negative y acceleration in every frame. I also overwrote the method for plane objects to prevent the floor from falling. </p>
+
+<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%">        <span style="color: #008800; font-weight: bold">virtual</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">updateVelocity</span>(<span style="color: #333399; font-weight: bold">float</span> dt) {
+                velocity <span style="color: #333333">+=</span> glm<span style="color: #333333">::</span>vec3(<span style="color: #0000DD; font-weight: bold">0</span>, dt <span style="color: #333333">*</span> <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">9.8f</span> <span style="color: #333333">/</span> <span style="color: #0000DD; font-weight: bold">5</span>, <span style="color: #0000DD; font-weight: bold">0</span>);
+                translate <span style="color: #333333">+=</span> velocity <span style="color: #333333">*</span> dt;
+                rotate <span style="color: #333333">+=</span> rot_velocity <span style="color: #333333">*</span> dt;
+                scale <span style="color: #333333">+=</span> scale_velocity <span style="color: #333333">*</span> dt;
+        }
+
+        <span style="color: #008800; font-weight: bold">virtual</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">init</span>() {
+                model <span style="color: #333333">=</span> createM(translate, rotate, scale);
+                minverse <span style="color: #333333">=</span> glm<span style="color: #333333">::</span>inverse(model);
+                normal_model <span style="color: #333333">=</span> glm<span style="color: #333333">::</span>transpose(minverse);
+                center <span style="color: #333333">=</span> getCenter();
+        }
+</pre></div>
+ 
+		 
+<h2>Results</h2>
+	<p><img src="ian.png" <="" br=""></p>
+	<p>This images showcases pure velocities - the cube has a velocity in the positive x direction and the sphere has no velocity.  However, both of them are simulating gravity so actually have negative y acceleration.  </p>
+	<p><img src="ian2.png" <="" br=""></p>
+	<p>This scene showcases the cube having a rotation velocity about the x axis and the sphere having a uniform positive scale velocity.  </p>
+	<p><img src="ian3.png" <="" br=""></p>
+	<p>This is the same scene as above rendered with 100 frames instead of 10.</p>
+
+<h2>Software Design</h2>
+I created an "Intersectable" class which is an abstraction for objects such as planes, triangles, spheres, and boxes.  It contains functions such as intersect and computeBoundingBox that are uniquely implemented by each ofthe classes as well as functions that can be written by the Intersectable class as they are the same across all geometry (such as creating the model matrices).  This abstraction made it very easy for me to create motion blur without going into any of the specifics for the geometry.  I simply updated the transform matricies within the higher level Intersectable class (updateVelocity function) using the velocities extracted from the pov file.  Then the transforms were easily applied to any piece of geometry that the raytracer already understood how to extract from the pov file.  </p>
+
+<h2>References</h2>
+<p>Ian Dunn</p>
+
+</div>
+
+</body></html>
